@@ -10,18 +10,31 @@ class AttendanceScreen extends StatefulWidget {
   _AttendanceScreenState createState() => _AttendanceScreenState();
 }
 
-class _AttendanceScreenState extends State<AttendanceScreen> {
+class _AttendanceScreenState extends State<AttendanceScreen>
+    with TickerProviderStateMixin {
   bool isCheckedIn = false;
   List<CameraDescription>? cameras;
   String? checkInTime;
   String? checkOutTime;
   String? status;
   List<Map<String, String>> attendanceHistory = [];
+  late TabController _tabController;
+
+  int leaveDays = 0;
+  int presentDays = 20;
+  int absentDays = 0;
 
   @override
   void initState() {
     super.initState();
     _initializeCameras();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeCameras() async {
@@ -53,7 +66,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         } else {
           status = "Late";
         }
-        attendanceHistory.add({"Date": DateFormat('yyyy-MM-dd').format(DateTime.now()), "Check In": checkInTime!, "Status": status!});
+        attendanceHistory.add({
+          "Date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+          "Check In": checkInTime!,
+          "Status": status!
+        });
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Checked in at $checkInTime ($status)")),
@@ -95,14 +112,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
 
     CameraController cameraController = CameraController(
-      cameras!.firstWhere((camera) => camera.lensDirection == CameraLensDirection.front),
+      cameras!.firstWhere(
+          (camera) => camera.lensDirection == CameraLensDirection.front),
       ResolutionPreset.medium,
     );
     await cameraController.initialize();
 
     bool faceDetected = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => FaceRecognitionScreen(cameraController)),
+      MaterialPageRoute(
+          builder: (context) => FaceRecognitionScreen(cameraController)),
     );
 
     if (faceDetected) {
@@ -117,46 +136,139 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Attendance")),
-      body: Column(
+      appBar: AppBar(
+        title: Text("Attendance"),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: "Summary"),
+            Tab(text: "Check In"),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          Center(
-            child: ElevatedButton(
-              onPressed: _handleAttendance,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isCheckedIn ? Colors.green : Colors.blue,
-                padding: EdgeInsets.symmetric(vertical: 15, horizontal: 40),
-              ),
-              child: Text(
-                isCheckedIn ? "Check Out" : "Check In",
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-          ),
-          SizedBox(height: 20),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: [
-                  DataColumn(label: Text("Date")),
-                  DataColumn(label: Text("Check In")),
-                  DataColumn(label: Text("Check Out")),
-                  DataColumn(label: Text("Status")),
-                ],
-                rows: attendanceHistory.map((record) {
-                  return DataRow(cells: [
-                    DataCell(Text(record["Date"] ?? "-")),
-                    DataCell(Text(record["Check In"] ?? "-")),
-                    DataCell(Text(record["Check Out"] ?? "-")),
-                    DataCell(Text(record["Status"] ?? "-")),
-                  ]);
-                }).toList(),
-              ),
-            ),
-          ),
+          _buildSummaryTab(),
+          _buildCheckInTab(),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        child: Icon(Icons.add),
       ),
     );
   }
+
+  Widget _buildSummaryTab() {
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            DateFormat('yyyy MMMM').format(DateTime.now()),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildSummaryCard("Leave Days", leaveDays),
+            _buildSummaryCard("Present Days", presentDays),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildSummaryCard("Absent Days", absentDays),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            onPressed: () {},
+            child: Text("Attendance view"),
+          ),
+        ),
+        ListTile(
+          title: Text("Clock in priority"),
+          subtitle: Text("Biometric"),
+        ),
+        ListTile(
+          title: Text("Shift"),
+          subtitle: Text("General Shift-3 Regularization Limit\n10:00 - 19:00"),
+        ),
+        ListTile(
+          title: Text("Policy"),
+          subtitle: Text("ATTENDANCE POLICY- 3 REGULARIZATION LIMIT",
+              style: TextStyle(color: Colors.blue)),
+        ),
+        ListTile(
+          title: Text("Weekly Off"),
+          subtitle: Text("Sunday\nAll Sunday"),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(String title, int value) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              value.toString(),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Text(title),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckInTab() {
+    return Column(
+      children: [
+        Center(
+          child: ElevatedButton(
+            onPressed: _handleAttendance,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isCheckedIn ? Colors.green : Colors.blue,
+              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 40),
+            ),
+            child: Text(
+              isCheckedIn ? "Check Out" : "Check In",
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ),
+        ),
+        SizedBox(height: 20),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: [
+                DataColumn(label: Text("Date")),
+                DataColumn(label: Text("Check In")),
+                DataColumn(label: Text("Check Out")),
+                DataColumn(label: Text("Status")),
+              ],
+              rows: attendanceHistory.map((record) {
+                return DataRow(cells: [
+                  DataCell(Text(record["Date"] ?? "-")),
+                  DataCell(Text(record["Check In"] ?? "-")),
+                  DataCell(Text(record["Check Out"] ?? "-")),
+                  DataCell(Text(record["Status"] ?? "-")),
+                ]);
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
+

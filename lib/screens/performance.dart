@@ -1,5 +1,4 @@
  import 'package:flutter/material.dart';
- import 'package:fl_chart/fl_chart.dart';
  
 
  class PerformanceScreen extends StatelessWidget {
@@ -8,150 +7,69 @@
    return Scaffold(
     appBar: AppBar(
      title: Text(
-      "Attendance Performance",
-      style: TextStyle(fontWeight: FontWeight.bold),
+      "Performance",
+      style: TextStyle(
+       fontWeight: FontWeight.bold,
+       color: Colors.black), // Set title color to black
      ),
-     centerTitle: true,
-     backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+     centerTitle: false,
+     backgroundColor: Colors.white, // Set background color to white
      elevation: 0,
+     leading: IconButton(
+      icon: Icon(Icons.arrow_back, color: Colors.black), // Set back arrow color to black
+      onPressed: () {
+       Navigator.pop(context);
+      },
+     ),
     ),
-    backgroundColor: Colors.grey[100],
-    body: Padding(
+    backgroundColor: Colors.white, // Set background color to white
+    body: ListView(
      padding: const EdgeInsets.all(16.0),
-     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-       // Dashboard Sections
-       Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-         _buildDashboardSection(
-          "Total Present",
-          "120",
-          Icons.check_circle,
-          Colors.green,
-          context,
-         ),
-         _buildDashboardSection(
-          "Total Absent",
-          "15",
-          Icons.cancel,
-          Colors.red,
-          context,
-         ),
-        ],
-       ),
-       SizedBox(height: 20),
- 
-
-       // Attendance Trends Chart
-       Container(
-        decoration: BoxDecoration(
-         color: Colors.white,
-         borderRadius: BorderRadius.circular(12),
-         boxShadow: [
-          BoxShadow(
-           color: Colors.grey.withOpacity(0.3),
-           spreadRadius: 1,
-           blurRadius: 5,
-           offset: Offset(0, 3),
-          ),
-         ],
-        ),
-        padding: EdgeInsets.all(16),
-        child: Column(
-         crossAxisAlignment: CrossAxisAlignment.start,
-         children: [
-          Text(
-           "Attendance Trends",
-           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 10),
-          _buildAttendanceChart(),
-         ],
-        ),
-       ),
-      ],
-     ),
-    ),
-   );
-  }
- 
-
-  Widget _buildDashboardSection(
-    String title, String value, IconData icon, Color color, BuildContext context) {
-   return Card(
-    elevation: 4,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    child: Container(
-     padding: EdgeInsets.all(12),
-     width: MediaQuery.of(context).size.width * 0.4,
-     child: Column(
-      children: [
-       Icon(icon, size: 32, color: color),
-       SizedBox(height: 8),
-       Text(title,
-         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-       Text(value, style: TextStyle(fontSize: 18, color: color)),
-      ],
-     ),
-    ),
-   );
-  }
- 
-
-  Widget _buildAttendanceChart() {
-   return AspectRatio(
-    aspectRatio: 1.5,
-    child: LineChart(
-     LineChartData(
-      gridData: FlGridData(show: true, drawHorizontalLine: true, drawVerticalLine: false),
-      titlesData: FlTitlesData(
-       leftTitles: AxisTitles(
-        sideTitles: SideTitles(
-         showTitles: true,
-         reservedSize: 30,
-         getTitlesWidget: (value, meta) {
-          return Text(value.toInt().toString());
-         },
-        ),
-       ),
-       bottomTitles: AxisTitles(
-        sideTitles: SideTitles(
-         showTitles: true,
-         getTitlesWidget: (value, meta) {
-          return Text(value.toInt().toString());
-         },
-        ),
-       ),
-       topTitles: AxisTitles(
-         sideTitles: SideTitles(showTitles: false),
-       ),
-       rightTitles: AxisTitles(
-         sideTitles: SideTitles(showTitles: false),
-       ),
+     children: [
+      _buildPerformanceOption(
+       context,
+       "Goal Plan",
+       Icons.flag_outlined,
+       Colors.blue, // Icon color for Goal Plan
       ),
-      borderData: FlBorderData(show: false),
-      lineBarsData: [
-       LineChartBarData(
-        spots: [
-         FlSpot(1, 95),
-         FlSpot(2, 92),
-         FlSpot(3, 88),
-         FlSpot(4, 91),
-         FlSpot(5, 90),
-        ],
-        isCurved: true,
-        color: Colors.blueAccent,
-        barWidth: 4,
-        dotData: FlDotData(show: true),
-        belowBarData: BarAreaData(
-         show: true,
-         color: Colors.blue.withOpacity(0.2),
-        ),
-       ),
-      ],
+      _buildPerformanceOption(
+       context,
+       "Review",
+       Icons.star_border,
+       Colors.orange, // Icon color for Review
+      ),
+      _buildPerformanceOption(
+       context,
+       "MSF",
+       Icons.people_outline,
+       Colors.blueAccent, // Icon color for MSF
+      ),
+     ],
+    ),
+   );
+  }
+ 
+
+  Widget _buildPerformanceOption(
+   BuildContext context,
+   String title,
+   IconData icon,
+   Color iconColor,
+  ) {
+   return Card(
+    elevation: 0, // remove shadow
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    color: Colors.grey[50], // Background color of the card
+    child: ListTile(
+     leading: CircleAvatar(
+      backgroundColor: Colors.grey[50], // Background color of the circle
+      child: Icon(icon, color: iconColor),
      ),
+     title: Text(title, style: TextStyle(fontWeight: FontWeight.w400)),
+     trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey), // Color of the arrow
+     onTap: () {
+      // Handle navigation or action
+     },
     ),
    );
   }
