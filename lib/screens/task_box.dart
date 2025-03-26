@@ -118,6 +118,122 @@ class _TaskBoxScreenState extends State<TaskBoxScreen>
     return tasks; // Placeholder; replace with logic for "Raised by me"
   }
 
+  void _addTask() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String taskName = '';
+        String taskDescription = '';
+        String assignedTo = '';
+        DateTime? assignedDate;
+        DateTime? submissionDate;
+
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: Text('Add New Task'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    TextField(
+                      decoration: InputDecoration(hintText: "Task Name"),
+                      onChanged: (value) => taskName = value,
+                    ),
+                    TextField(
+                      decoration:
+                          InputDecoration(hintText: "Task Description"),
+                      onChanged: (value) => taskDescription = value,
+                    ),
+                    TextField(
+                      decoration: InputDecoration(hintText: "Assign To"),
+                      onChanged: (value) => assignedTo = value,
+                    ),
+                    ListTile(
+                      title: Text(
+                        assignedDate == null
+                            ? 'Select Assign Date'
+                            : 'Assign Date: ${assignedDate!.toLocal()}'.split(' ')[0],
+                      ),
+                      trailing: Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2026),
+                        );
+                        if (pickedDate != null) {
+                          setState(() {
+                            assignedDate = pickedDate;
+                          });
+                        }
+                      },
+                    ),
+                    ListTile(
+                      title: Text(
+                        submissionDate == null
+                            ? 'Select Submission Date'
+                            : 'Submission Date: ${submissionDate!.toLocal()}'.split(' ')[0],
+                      ),
+                      trailing: Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2026),
+                        );
+                        if (pickedDate != null) {
+                          setState(() {
+                            submissionDate = pickedDate;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: Text('Add'),
+                  onPressed: () {
+                    setState(() {
+                      tasks.add({
+                        "employee": assignedTo,
+                        "task": taskName,
+                        "taskType": "Custom",
+                        "description": taskDescription,
+                        "completed": false,
+                        "deadline": submissionDate ?? DateTime.now(),
+                      });
+                    });
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openTaskDetails(Map<String, dynamic> task) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TaskDetailScreen(task: task),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,20 +242,6 @@ class _TaskBoxScreenState extends State<TaskBoxScreen>
         backgroundColor: Colors.white,
         titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.black),
-            onPressed: () {
-              // Implement refresh functionality
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.person_outline, color: Colors.black),
-            onPressed: () {
-              // Implement profile functionality
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -189,6 +291,7 @@ class _TaskBoxScreenState extends State<TaskBoxScreen>
                       return ListTile(
                         title: Text(task["task"]),
                         subtitle: Text("Assigned to: ${task["employee"]}"),
+                        onTap: () => _openTaskDetails(task),
                       );
                     },
                   ),
@@ -224,6 +327,7 @@ class _TaskBoxScreenState extends State<TaskBoxScreen>
                       return ListTile(
                         title: Text(task["task"]),
                         subtitle: Text("Assigned to: ${task["employee"]}"),
+                        onTap: () => _openTaskDetails(task),
                       );
                     },
                   ),
@@ -233,9 +337,46 @@ class _TaskBoxScreenState extends State<TaskBoxScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {}, //_addOrEditTask,
+        onPressed: _addTask,
         child: Icon(Icons.add),
         backgroundColor: Colors.blue,
+      ),
+    );
+  }
+}
+
+class TaskDetailScreen extends StatelessWidget {
+  final Map<String, dynamic> task;
+
+  TaskDetailScreen({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Task Details"),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              task["task"],
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text("Assigned to: ${task["employee"]}"),
+            SizedBox(height: 10),
+            Text("Task Type: ${task["taskType"]}"),
+            SizedBox(height: 10),
+            Text("Description: ${task["description"]}"),
+            SizedBox(height: 10),
+            Text("Deadline: ${task["deadline"].toString()}"),
+            SizedBox(height: 10),
+            Text("Completed: ${task["completed"] ? 'Yes' : 'No'}"),
+          ],
+        ),
       ),
     );
   }

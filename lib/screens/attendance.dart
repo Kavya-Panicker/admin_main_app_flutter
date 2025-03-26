@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import '../utils/gps_helper.dart';
 import 'face_recognition_screen.dart';
+import 'attendance_view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 
@@ -17,12 +18,55 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   String? checkInTime;
   String? checkOutTime;
   String? status;
-  List<Map<String, String>> attendanceHistory = [];
+  List<Map<String, String>> attendanceHistory = [
+    {
+      "Date": "2025-03-17",
+      "Check In": "09:00 AM",
+      "Check Out": "05:00 PM",
+      "Status": "On-Time"
+    },
+    {
+      "Date": "2025-03-18",
+      "Check In": "08:55 AM",
+      "Check Out": "05:05 PM",
+      "Status": "On-Time"
+    },
+    {
+      "Date": "2025-03-19",
+      "Check In": "09:10 AM",
+      "Check Out": "05:15 PM",
+      "Status": "Late"
+    },
+    {
+      "Date": "2025-03-20",
+      "Check In": "09:03 AM",
+      "Check Out": "05:00 PM",
+      "Status": "On-Time"
+    },
+    {
+      "Date": "2025-03-21",
+      "Check In": "09:00 AM",
+      "Check Out": "05:00 PM",
+      "Status": "On-Time"
+    },
+    {
+      "Date": "2025-03-22",
+      "Check In": "09:00 AM",
+      "Check Out": "01:00 PM",
+      "Status": "On-Time"
+    },
+    {
+      "Date": "2025-03-23",
+      "Check In": "-",
+      "Check Out": "-",
+      "Status": "Weekly Off"
+    },
+  ];
   late TabController _tabController;
 
-  int leaveDays = 0;
-  int presentDays = 20;
-  int absentDays = 0;
+  int leaveDays = 2;
+  int presentDays = 18;
+  int absentDays = 1;
 
   @override
   void initState() {
@@ -66,11 +110,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         } else {
           status = "Late";
         }
-        attendanceHistory.add({
+        var newEntry = {
           "Date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
-          "Check In": checkInTime!,
-          "Status": status!
-        });
+          "Check In": checkInTime ?? "-",
+          "Check Out": "-",
+          "Status": status ?? "-"
+        };
+        attendanceHistory.add(newEntry);
         setState(() {});
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Checked in at $checkInTime ($status)")),
@@ -133,6 +179,92 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     await cameraController.dispose();
   }
 
+  void _showAttendanceViewDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Attendance View'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                title: Text('Weekly View'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showWeeklyAttendance();
+                },
+              ),
+              ListTile(
+                title: Text('Monthly View'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showMonthlyAttendance();
+                },
+              ),
+              ListTile(
+                title: Text('Overall View'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showOverallAttendance();
+                },
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showWeeklyAttendance() {
+    List<Map<String, String>> weeklyData = attendanceHistory.where((record) {
+      DateTime entryDate = DateTime.parse(record["Date"]!);
+      DateTime now = DateTime.now();
+      return now.difference(entryDate).inDays <= 7;
+    }).toList();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AttendanceViewScreen(attendanceData: weeklyData, title: "Weekly Attendance"),
+      ),
+    );
+  }
+
+  void _showMonthlyAttendance() {
+    List<Map<String, String>> monthlyData = attendanceHistory.where((record) {
+      DateTime entryDate = DateTime.parse(record["Date"]!);
+      DateTime now = DateTime.now();
+      return entryDate.month == now.month && entryDate.year == now.year;
+    }).toList();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AttendanceViewScreen(attendanceData: monthlyData, title: "Monthly Attendance"),
+      ),
+    );
+  }
+
+  void _showOverallAttendance() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            AttendanceViewScreen(attendanceData: attendanceHistory, title: "Overall Attendance"),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,10 +284,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           _buildSummaryTab(),
           _buildCheckInTab(),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: Icon(Icons.add),
       ),
     );
   }
@@ -187,26 +315,39 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: () {},
-            child: Text("Attendance view"),
+            onPressed: _showAttendanceViewDialog,
+            child: Text("Attendance View"),
           ),
-        ),
-        ListTile(
-          title: Text("Clock in priority"),
-          subtitle: Text("Biometric"),
-        ),
-        ListTile(
-          title: Text("Shift"),
-          subtitle: Text("General Shift-3 Regularization Limit\n10:00 - 19:00"),
-        ),
-        ListTile(
-          title: Text("Policy"),
-          subtitle: Text("ATTENDANCE POLICY- 3 REGULARIZATION LIMIT",
-              style: TextStyle(color: Colors.blue)),
         ),
         ListTile(
           title: Text("Weekly Off"),
           subtitle: Text("Sunday\nAll Sunday"),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            "Attendance History",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: [
+              DataColumn(label: Text("Date")),
+              DataColumn(label: Text("Check In")),
+              DataColumn(label: Text("Check Out")),
+              DataColumn(label: Text("Status")),
+            ],
+            rows: attendanceHistory.map((record) {
+              return DataRow(cells: [
+                DataCell(Text(record["Date"] ?? "-")),
+                DataCell(Text(record["Check In"] ?? "-")),
+                DataCell(Text(record["Check Out"] ?? "-")),
+                DataCell(Text(record["Status"] ?? "-")),
+              ]);
+            }).toList(),
+          ),
         ),
       ],
     );
@@ -271,4 +412,3 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     );
   }
 }
-
